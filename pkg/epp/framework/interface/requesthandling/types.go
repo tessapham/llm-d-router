@@ -65,7 +65,7 @@ func (RawPayload) IsParsed() bool    { return false }
 
 // InferenceRequestBody contains the request-body fields that we parse out as user input,
 // to be used in forming scheduling decisions.
-// An InferenceRequestBody must contain exactly one of CompletionsRequest, ChatCompletionsRequest, ResponsesRequest, ConversationsRequest, EmbeddingsRequest, or GenerateRequest.
+// An InferenceRequestBody must contain exactly one of CompletionsRequest, ChatCompletionsRequest, ResponsesRequest, ConversationsRequest, EmbeddingsRequest, GenerateRequest, or MessagesRequest.
 type InferenceRequestBody struct {
 	// CompletionsRequest is the representation of the OpenAI /v1/completions request body.
 	Completions *CompletionsRequest `json:"completions,omitempty"`
@@ -135,6 +135,21 @@ func (r *InferenceRequestBody) PromptText() string {
 			}
 		}
 		return sb.String()
+	case r.Messages != nil:
+		var sb strings.Builder
+		sysText := r.Messages.System.PlainText()
+		if sysText != "" {
+			sb.WriteString(sysText)
+			sb.WriteString(" ")
+		}
+		for _, msg := range r.Messages.Messages {
+			text := msg.Content.PlainText()
+			if text != "" {
+				sb.WriteString(text)
+				sb.WriteString(" ")
+			}
+		}
+		return sb.String()
 	case r.Responses != nil:
 		if s, ok := r.Responses.Input.(string); ok {
 			return s
@@ -178,6 +193,9 @@ func (r *InferenceRequestBody) CacheSalt() string {
 	}
 	if r.ChatCompletions != nil {
 		return r.ChatCompletions.CacheSalt
+	}
+	if r.Messages != nil {
+		return r.Messages.CacheSalt
 	}
 	if r.Completions != nil {
 		return r.Completions.CacheSalt
@@ -648,7 +666,7 @@ func (r *MessagesRequest) String() string {
 }
 
 type AnthropicMessage struct {
-	Role    string `json:"role"`
+	Role    string           `json:"role"`
 	Content AnthropicContent `json:"content"`
 }
 
@@ -700,8 +718,8 @@ func (ac AnthropicContent) PlainText() string {
 }
 
 type AnthropicContentBlock struct {
-	Type       string     `json:"type"`
-	Text       string     `json:"text,omitempty"`
+	Type string `json:"type"`
+	Text string `json:"text,omitempty"`
 	// image source fields (base64 or URL)
 	Source *AnthropicImageSource `json:"source,omitempty"`
 }
