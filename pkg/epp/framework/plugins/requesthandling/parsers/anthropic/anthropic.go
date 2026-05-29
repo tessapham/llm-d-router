@@ -65,7 +65,7 @@ func (p *AnthropicParser) SupportedAppProtocols() []v1.AppProtocol {
 	return []v1.AppProtocol{v1.AppProtocolH2C, v1.AppProtocolHTTP}
 }
 
-func AnthropicParserPluginFactory(name string, _ json.RawMessage, _ fwkplugin.Handle) (fwkplugin.Plugin, error) {
+func AnthropicParserPluginFactory(name string, _ *json.Decoder, _ fwkplugin.Handle) (fwkplugin.Plugin, error) {
 	return NewAnthropicParser().WithName(name), nil
 }
 
